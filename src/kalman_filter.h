@@ -1,8 +1,12 @@
 #ifndef KALMAN_FILTER_H_
 #define KALMAN_FILTER_H_
 #include "Eigen/Dense"
+#include "tools.h"
 
 class KalmanFilter {
+
+  Tools tools;
+
 public:
 
   // state vector
@@ -20,8 +24,17 @@ public:
   // measurement matrix
   Eigen::MatrixXd H_;
 
-  // measurement covariance matrix
+  // measurement matrix (jacobian for radar measurement)
+  Eigen::MatrixXd Hj_;
+
+  // measurement covariance matrix (for laser measurement)
   Eigen::MatrixXd R_;
+
+  // measurement covariance matrix (for radar measurement)
+  Eigen::MatrixXd R_ekf_;
+
+  // 4x4 identity matrix
+  Eigen::MatrixXd I_;
 
   /**
    * Constructor
@@ -43,7 +56,8 @@ public:
    * @param Q_in Process covariance matrix
    */
   void Init(Eigen::VectorXd &x_in, Eigen::MatrixXd &P_in, Eigen::MatrixXd &F_in,
-      Eigen::MatrixXd &H_in, Eigen::MatrixXd &R_in, Eigen::MatrixXd &Q_in);
+      Eigen::MatrixXd &H_in, Eigen::MatrixXd &Hj_in, Eigen::MatrixXd &R_in,
+      Eigen::MatrixXd &R_ekf_in, Eigen::MatrixXd &Q_in);
 
   /**
    * Prediction Predicts the state and the state covariance

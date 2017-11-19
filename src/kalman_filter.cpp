@@ -1,4 +1,5 @@
 #include "kalman_filter.h"
+#define PI 3.14159265359
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -11,13 +12,17 @@ KalmanFilter::KalmanFilter() {}
 KalmanFilter::~KalmanFilter() {}
 
 void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
-                        MatrixXd &H_in, MatrixXd &R_in, MatrixXd &Q_in) {
+                        MatrixXd &H_in, MatrixXd &Hj_in, MatrixXd &R_in,
+                        MatrixXd &R_ekf_in, MatrixXd &Q_in) {
   x_ = x_in;
   P_ = P_in;
   F_ = F_in;
   H_ = H_in;
+  Hj_ = Hj_in;
   R_ = R_in;
+  R_ekf_ = R_ekf_in;
   Q_ = Q_in;
+  I_ = MatrixXd::Identity(4,4);
 }
 
 void KalmanFilter::Predict() {
@@ -25,6 +30,8 @@ void KalmanFilter::Predict() {
   TODO:
     * predict the state
   */
+  x_ = F_*x_;
+  P_ = F_*P_*F_.transpose() + Q_;
 }
 
 void KalmanFilter::Update(const VectorXd &z) {
@@ -32,6 +39,15 @@ void KalmanFilter::Update(const VectorXd &z) {
   TODO:
     * update the state by using Kalman Filter equations
   */
+  VectorXd y = z - H_*x_;
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S = H_*P_*Ht + R_;
+  MatrixXd Si = S.inverse();
+  MatrixXd K = P_*Ht*Si;
+
+  // new state
+  x_ = x_ + (K*y);
+  P_ = (I_ - K*H_)*P_;
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
@@ -39,4 +55,37 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   TODO:
     * update the state by using Extended Kalman Filter equations
   */
+  float px = x_[0];
+  float py = x_[1];
+  float vx = x_[2];
+  float vy = x_[3];
+
+  // avoid rho being zero
+  if (px == 0.f && py == 0.f)
+    return;
+  Hj_ = tools.CalculateJacobian(x_);
+  VectorXd hx(3);
+  float rho = sqrt(px*px + py*py);
+  hx << rho, atan2(py, px), (px*vx + py*vy)/rho;
+
+  VectorXd y = z - hx;
+  
+  // normalize phi and make sure to be between -pi and pi
+  while (y[1] > PI)
+  {
+    y[1] -= 2.f*PI;
+  }
+  while (y[1] < -PI)
+  {
+    y[1] += 2.f*PI;
+  }
+  
+  MatrixXd Hjt = Hj_.transpose();
+  MatrixXd S = Hj_*P_*Hjt + R_ekf_;
+  MatrixXd Si = S.inverse();
+  MatrixXd K = P_*Hjt*Si;
+
+  // new state
+  x_ = x_ + (K*y);
+  P_ = (I_ - K*Hj_)*P_;
 }
