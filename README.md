@@ -14,6 +14,6 @@ Once the install for uWebSocketIO is complete, the main program can be built and
 
 Then download and run the [term 2 simulation](https://github.com/udacity/self-driving-car-sim/releases), select the first one (project 1/2 EKF and UKF) and press start for testing.
 
-![akf simulation](./ekf_crop.png)
+![akf simulation](./ekf.png)
 
 Red circles are lidar and blue circles are radar measurements. Green markers are the estimated position of the moving vehicle. Extended Kalman filter is very effective here estimating the position of the vehicle by reducing the measurement noise.
